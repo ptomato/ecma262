@@ -28902,7 +28902,7 @@
           1. If _x_ is not a String, return _x_.
           1. Let _evalRealm_ be the current Realm Record.
           1. NOTE: In the case of a direct eval, _evalRealm_ is the realm of both the caller of `eval` and of the `eval` function itself.
-          1. Perform ? HostEnsureCanCompileStrings(_evalRealm_).
+          1. Perform ? HostEnsureCanCompileStrings(_evalRealm_, _x_, _direct_).
           1. Let _inFunction_ be *false*.
           1. Let _inMethod_ be *false*.
           1. Let _inDerivedConstructor_ be *false*.
@@ -28965,12 +28965,15 @@
         <h1>
           HostEnsureCanCompileStrings (
             _calleeRealm_: a Realm Record,
+            optional _bodyText_: a String,
+            optional _direct_: a Boolean,
           ): either a normal completion containing ~unused~ or a throw completion
         </h1>
         <dl class="header">
           <dt>description</dt>
           <dd>It allows host environments to block certain ECMAScript functions which allow developers to interpret and evaluate strings as ECMAScript code.</dd>
         </dl>
+        <p>_direct_ signifies whether the evaluation is a direct eval.</p>
         <p>The default implementation of HostEnsureCanCompileStrings is to return NormalCompletion(~unused~).</p>
       </emu-clause>
 
@@ -30157,8 +30160,6 @@
             <dd>_constructor_ is the constructor function that is performing this action. _newTarget_ is the constructor that `new` was initially applied to. _parameterArgs_ and _bodyArg_ reflect the argument values that were passed to _constructor_.</dd>
           </dl>
           <emu-alg>
-            1. Let _currentRealm_ be the current Realm Record.
-            1. Perform ? HostEnsureCanCompileStrings(_currentRealm_).
             1. If _newTarget_ is *undefined*, set _newTarget_ to _constructor_.
             1. If _kind_ is ~normal~, then
               1. Let _prefix_ be *"function"*.
@@ -30196,8 +30197,13 @@
                 1. Let _nextArgString_ be ? ToString(_nextArg_).
                 1. Set _P_ to the string-concatenation of _P_, *","* (a comma), and _nextArgString_.
                 1. Set _k_ to _k_ + 1.
-            1. Let _bodyString_ be the string-concatenation of 0x000A (LINE FEED), ? ToString(_bodyArg_), and 0x000A (LINE FEED).
-            1. Let _sourceString_ be the string-concatenation of _prefix_, *" anonymous("*, _P_, 0x000A (LINE FEED), *") {"*, _bodyString_, and *"}"*.
+            1. Let _bodyString_ be ? ToString(_bodyArg_).
+            1. Let _currentRealm_ be the current Realm Record.
+            1. If _argCount_ = 0, then
+              1. Perform ? HostEnsureCanCompileStrings(_currentRealm_, _bodyString_, *false*).
+            1. Else,
+              1. Perform ? HostEnsureCanCompileStrings(_currentRealm_).
+            1. Let _sourceString_ be the string-concatenation of _prefix_, *" anonymous("*, _P_, 0x000A (LINE FEED), *") {"*, 0x000A (LINE FEED), _bodyString_, 0x000A (LINE FEED), and *"}"*.
             1. Let _sourceText_ be StringToCodePoints(_sourceString_).
             1. Let _parameters_ be ParseText(StringToCodePoints(_P_), _parameterSym_).
             1. If _parameters_ is a List of errors, throw a *SyntaxError* exception.
