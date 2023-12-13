@@ -28902,7 +28902,7 @@
           1. If _x_ is not a String, return _x_.
           1. Let _evalRealm_ be the current Realm Record.
           1. NOTE: In the case of a direct eval, _evalRealm_ is the realm of both the caller of `eval` and of the `eval` function itself.
-          1. Perform ? HostEnsureCanCompileStrings(_evalRealm_, _x_, _direct_).
+          1. Perform ? HostEnsureCanCompileStrings(_evalRealm_, « », _x_, _direct_).
           1. Let _inFunction_ be *false*.
           1. Let _inMethod_ be *false*.
           1. Let _inDerivedConstructor_ be *false*.
@@ -28965,14 +28965,16 @@
         <h1>
           HostEnsureCanCompileStrings (
             _calleeRealm_: a Realm Record,
-            optional _bodyText_: a String,
-            optional _direct_: a Boolean,
+            _paramsStrings_: a List of Strings,
+            _bodyString_: a String,
+            _direct_: a Boolean,
           ): either a normal completion containing ~unused~ or a throw completion
         </h1>
         <dl class="header">
           <dt>description</dt>
           <dd>It allows host environments to block certain ECMAScript functions which allow developers to interpret and evaluate strings as ECMAScript code.</dd>
         </dl>
+        <p>_paramsStrings_ represents the strings that, when using the `Function` constructor, will be concatenated tgether to build the parameters list. _bodyString_ represents the function body or the string passed to an `eval` call.</p>
         <p>_direct_ signifies whether the evaluation is a direct eval.</p>
         <p>The default implementation of HostEnsureCanCompileStrings is to return NormalCompletion(~unused~).</p>
       </emu-clause>
@@ -30187,22 +30189,20 @@
               1. Let _parameterSym_ be the grammar symbol |FormalParameters[+Yield, +Await]|.
               1. Let _fallbackProto_ be *"%AsyncGeneratorFunction.prototype%"*.
             1. Let _argCount_ be the number of elements in _parameterArgs_.
+            1. Let _parametersStrings_ be a new empty List.
+            1. For each _arg_ of _parameterArgs_, do
+              1. Append ? ToString(_arg_) to _parametersStrings_.
             1. Let _P_ be the empty String.
             1. If _argCount_ > 0, then
-              1. Let _firstArg_ be _parameterArgs_[0].
-              1. Set _P_ to ? ToString(_firstArg_).
+              1. Set _P_ to _parametersStrings_[0].
               1. Let _k_ be 1.
               1. Repeat, while _k_ &lt; _argCount_,
-                1. Let _nextArg_ be _parameterArgs_[_k_].
-                1. Let _nextArgString_ be ? ToString(_nextArg_).
+                1. Let _nextArgString_ be _parametersStrings_[_k_].
                 1. Set _P_ to the string-concatenation of _P_, *","* (a comma), and _nextArgString_.
                 1. Set _k_ to _k_ + 1.
             1. Let _bodyString_ be ? ToString(_bodyArg_).
             1. Let _currentRealm_ be the current Realm Record.
-            1. If _argCount_ = 0, then
-              1. Perform ? HostEnsureCanCompileStrings(_currentRealm_, _bodyString_, *false*).
-            1. Else,
-              1. Perform ? HostEnsureCanCompileStrings(_currentRealm_).
+            1. Perform ? HostEnsureCanCompileStrings(_currentRealm_, _parametersStrings_, _bodyString_, *false*).
             1. Let _sourceString_ be the string-concatenation of _prefix_, *" anonymous("*, _P_, 0x000A (LINE FEED), *") {"*, 0x000A (LINE FEED), _bodyString_, 0x000A (LINE FEED), and *"}"*.
             1. Let _sourceText_ be StringToCodePoints(_sourceString_).
             1. Let _parameters_ be ParseText(StringToCodePoints(_P_), _parameterSym_).
